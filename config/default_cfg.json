@@ -1,0 +1,14 @@
+{
+    "name": "default",
+    "epochs": 20,
+    "batch_size": 8,
+    "optimizer": {
+        "algorithm": "adam",
+        "learning_rate": 1e-4
+    },
+    "dataset": {
+        "data": "kinect",
+        "method": "supervised",
+        "path": "."
+    } 
+}

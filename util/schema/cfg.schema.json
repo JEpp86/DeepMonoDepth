@@ -1,0 +1,79 @@
+{
+  "$id": "https://github.com/JEpp86/DeepMonoDepth/util/schema/cfg.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DeepMonoDepth Configuration",
+  "description": "Configuration for DeepMonoDepth project",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "epochs": {
+      "type": "number"
+    },
+    "batch_size": {
+      "type": "number"
+    },
+    "optimizer": {
+      "description": "Optimizer settings for model training",
+      "type": "object",
+      "additional_properties": false,
+      "properties": { 
+        "algorithm": {
+          "type": "string",
+          "enum": ["sgd", "adam"]
+        },
+        "learning_rate": {
+          "type": "number",
+          "minimum": 1e-12,
+          "maximum": 1.0
+        }
+      },
+      "required": ["algorithm", "learning_rate"]
+    },
+    "dataset": {
+      "description": "Dataset and format for training",
+      "type": "object",
+      "additional_properties": false,
+      "properties": {
+        "data": {
+          "type": "string",
+          "enum": ["generic", "kitti", "kinect"]
+        },
+        "method": {
+          "type": "string",
+          "enum": ["supervised", "self-supervised", "weak-stereo", "weak-pose"]
+        },
+        "path": {
+          "type": "string"
+        },
+        "min_distance": {
+          "type": "number"
+        },
+        "max_distance": {
+          "type": "number"
+        },
+        "intrinsics": {
+          "description": "Intrinsic matrix K, 12 (3x4) elemets in array form, concatenating each subseqent row",
+          "type": "array",
+            "contains": {
+              "type": "number"
+            },
+            "minContains": 12,
+            "maxContains": 12
+        },
+        "transform": {
+          "description": "transform for caera to camera (weak-stereo) or position to camera (weak-pose) transformation",
+          "type": "array",
+          "contains": {
+            "type": "number"
+          },
+          "minContains": 12,
+          "maxContains": 12
+        }
+      },
+      "required": ["data", "method", "path"]
+    }
+  },
+  "required": [ "name", "epochs", "batch_size", "optimizer", "dataset" ]
+}
