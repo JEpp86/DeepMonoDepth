@@ -10,5 +10,10 @@
         "data": "kinect",
         "method": "supervised",
         "path": "."
-    } 
+    },
+    "network": {
+        "depth_network": "unet_resnet18",
+        "pose_network": "pose_resnet18",
+        "shared_encoder": false
+    }
 }

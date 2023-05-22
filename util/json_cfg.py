@@ -17,7 +17,6 @@ def validate_cfg(cfg: json, schema: json) -> bool:
         return False
     return True
 
-
 if __name__ == '__main__':
     print("JSON Config")
     print(schema_path)

@@ -73,6 +73,26 @@
         }
       },
       "required": ["data", "method", "path"]
+    },
+    "network": {
+      "description": "Network to be trained",
+      "type": "object",
+      "additional_properties": false,
+      "properties": {
+        "depth_network": {
+          "type": "string",
+          "enum": ["unet_resnet18"]
+        },
+        "pose_network": {
+          "type": "string",
+          "enum": ["pose_resnet18"]
+
+        },
+        "shared_encoder": {
+          "type": "boolean"
+        }
+      },
+      "required": ["depth_network"]
     }
   },
   "required": [ "name", "epochs", "batch_size", "optimizer", "dataset" ]
