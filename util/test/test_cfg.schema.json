@@ -1,0 +1,33 @@
+{
+  "$id": "https://github.com/JEpp86/DeepMonoDepth/util/schema/cfg.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "test schema",
+  "description": "test schema",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "pi": {
+      "type": "number"
+    },
+    "something": {
+      "type": "object",
+      "properties": {
+        "thing_one": {
+          "type": "string"
+        },
+        "thing_two": {
+          "type": "number"
+        }
+      }
+    },
+    "some_array": {
+      "contains": {
+        "type": "number"
+      },
+      "minContains": 4,
+      "maxContains": 4
+    }
+  }
+}
