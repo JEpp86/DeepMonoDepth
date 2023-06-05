@@ -1,23 +1,49 @@
+"""!
+@file Trainer.py
+@brief Trainign class to train model pased on cfg input
+@author Jason Epp
+"""
 import torch
 
+from util import json_cfg
+
+
 class Trainer():
+    """!
+    @brief Training class based on config file
+    @param config: Dictionary with training configuration. Loaded from JSON, verified agains schema.
+                   See util.json_cfg (util/json_cfg.py) for configuration utilities,
+                   See util/schema/cfg.schema.json for schema file
+    """
     def __init__(self, config: dict[str, any]):
         # training params 
         self.name = config['name']
+        self.method = config['method']
         self.epochs = config['epochs']
-        self.batch_size = config['batch_size']
-        self.learning_rate = config['optimizer']['learning_rate']
-        self.method = config['dataset']['method']
+        print("Training Params:")
+        print("\tName: " + self.name)
+        print("\tMethod: " + self.method)
+        print("\tEpochs: " + str(self.epochs))
         # network
-        self.depth_net = self.getModelFromCfg(config)
+        print("Network:")
+        self.depth_net = json_cfg.get_depth_model(config)
+        print("\tDepth Model: " + config['network']['depth_network'])
+        model_params = list(self.depth_net.parameters())
+        self.pose_net = json_cfg.get_pose_model(config)
         if self.method != 'supervised':
-            if 'pose_network' not in config['network']:
-                raise("Need Pose Network for for self-supervised training methods")
+            print("\tPose Model: " + config['network']['pose_network'])
+            if self.pose_net == None:
+                raise("Error: Cannot Train self-supervised without Pose Network, check configuration file")
+            else:
+                model_params += list(self.pose_net.parameters())
+            
         # optimizer
+        print("Optimizer:")
+        self.learning_rate = config['optimizer']['learning_rate']
+        print("\tAlgorithm: " + config['optimizer']['algorithm'])
+        print("\tLearning Rate: " + str(self.learning_rate))
         if config['optimizer']['algorithm'] == "adam":
-            print("Adam Optimizer")
-            # self.optim = torch.optim.Adam()
+            self.optim = torch.optim.Adam(model_params, self.learning_rate)
+        # Dataset
+        self.batch_size = config['dataset']['batch_size']
 
-    def getModelFromCfg(self, config: dict[str, any]):
-        if config['network']['depth_network'] == "unet_resnet18":
-            print("Model Type: " + config['network']['depth_network'])

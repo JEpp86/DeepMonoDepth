@@ -1,5 +1,5 @@
 {
-    "name": "default",
+    "name": "kinect",
     "method": "supervised",
     "epochs": 20,
     "optimizer": {
@@ -7,13 +7,11 @@
         "learning_rate": 1e-4
     },
     "dataset": {
-        "data": "generic",
+        "data": "kinect",
         "path": ".",
         "batch_size": 8
     },
     "network": {
-        "depth_network": "unet_resnet18",
-        "pose_network": "pose_resnet18",
-        "shared_encoder": false
+        "depth_network": "unet_resnet18"
     }
 }
