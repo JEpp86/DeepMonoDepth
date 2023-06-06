@@ -36,14 +36,18 @@ class Trainer():
                 raise("Error: Cannot Train self-supervised without Pose Network, check configuration file")
             else:
                 model_params += list(self.pose_net.parameters())
-            
+        elif self.pose_net != None:
+            print("\tWarning: Pose model " + config['network']['pose_network'] + \
+                    " will not be included in supervised training")
         # optimizer
         print("Optimizer:")
         self.learning_rate = config['optimizer']['learning_rate']
         print("\tAlgorithm: " + config['optimizer']['algorithm'])
         print("\tLearning Rate: " + str(self.learning_rate))
-        if config['optimizer']['algorithm'] == "adam":
-            self.optim = torch.optim.Adam(model_params, self.learning_rate)
-        # Dataset
+        self.optim = json_cfg.get_optimizer(config, model_params)
+        # dataset
+        print("Data:")
+        print("\tDataset: " + config['dataset']['data'])
         self.batch_size = config['dataset']['batch_size']
+        print("\tBatch Size: " + str(self.batch_size))
 
