@@ -1,0 +1,24 @@
+{
+    "name": "kitti_ss",
+    "method": "self-supervised",
+    "epochs": 20,
+    "optimizer": {
+        "algorithm": "adam",
+        "learning_rate": 1e-4
+    },
+    "dataset": {
+        "data": "kitti",
+        "path": ".",
+        "batch_size": 8,
+        "min_distance": 0.1,
+        "max_distance": 350.0,
+        "intrinsics": [718.856, 0.0, 607.1928, 0.0,
+                       0.0, 718.856, 185.2157, 0.0,
+                       0.0, 0.0, 1.0, 0.0]
+    },
+    "network": {
+        "depth_network": "unet_resnet18",
+        "pose_network": "pose_resnet18",
+        "shared_encoder": false
+    }
+}

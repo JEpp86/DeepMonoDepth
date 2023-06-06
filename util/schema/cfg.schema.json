@@ -8,14 +8,32 @@
     "name": {
       "type": "string"
     },
-    "epochs": {
-      "type": "number"
+    "method": {
+      "type": "string",
+      "enum": ["supervised", "self-supervised", "weak-stereo", "weak-pose"]
     },
-    "batch_size": {
+    "epochs": {
       "type": "number"
     },
     "optimizer": {
       "description": "Optimizer settings for model training",
+      "type": "object",
+      "additional_properties": false,
+      "properties": { 
+        "algorithm": {
+          "type": "string",
+          "enum": ["sgd", "adam"]
+        },
+        "learning_rate": {
+          "type": "number",
+          "minimum": 1e-12,
+          "maximum": 1.0
+        }
+      },
+      "required": ["algorithm", "learning_rate"]
+    },
+    "pose_optimizer": {
+      "description": "Optimizer settings for pose model training if using seperate optimizer",
       "type": "object",
       "additional_properties": false,
       "properties": { 
@@ -40,12 +58,19 @@
           "type": "string",
           "enum": ["generic", "kitti", "kinect"]
         },
-        "method": {
-          "type": "string",
-          "enum": ["supervised", "self-supervised", "weak-stereo", "weak-pose"]
-        },
         "path": {
           "type": "string"
+        },
+        "batch_size": {
+          "type": "number"
+        },
+        "img_width": {
+          "description": "Image Width must be devisible by 32",
+          "type": "number"
+        },
+        "img_height": {
+          "description": "Image Height must be devisible by 32",
+          "type": "number"
         },
         "min_distance": {
           "type": "number"
@@ -72,7 +97,7 @@
           "maxContains": 12
         }
       },
-      "required": ["data", "method", "path"]
+      "required": ["data", "method", "path", "batch_size"]
     },
     "network": {
       "description": "Network to be trained",
@@ -81,11 +106,11 @@
       "properties": {
         "depth_network": {
           "type": "string",
-          "enum": ["unet_resnet18"]
+          "enum": ["unet_resnet18", "unet_resnet34"]
         },
         "pose_network": {
           "type": "string",
-          "enum": ["pose_resnet18"]
+          "enum": ["pose_resnet18", "none"]
 
         },
         "shared_encoder": {
@@ -95,5 +120,5 @@
       "required": ["depth_network"]
     }
   },
-  "required": [ "name", "epochs", "batch_size", "optimizer", "dataset" ]
+  "required": [ "name", "method", "epochs", "optimizer", "dataset" ]
 }
