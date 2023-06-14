@@ -19,7 +19,7 @@
       "description": "Optimizer settings for model training",
       "type": "object",
       "additional_properties": false,
-      "properties": { 
+      "properties": {
         "algorithm": {
           "type": "string",
           "enum": ["sgd", "adam"]
@@ -36,7 +36,7 @@
       "description": "Optimizer settings for pose model training if using seperate optimizer",
       "type": "object",
       "additional_properties": false,
-      "properties": { 
+      "properties": {
         "algorithm": {
           "type": "string",
           "enum": ["sgd", "adam"]
@@ -97,7 +97,7 @@
           "maxContains": 12
         }
       },
-      "required": ["data", "method", "path", "batch_size"]
+      "required": ["data", "path", "batch_size"]
     },
     "network": {
       "description": "Network to be trained",

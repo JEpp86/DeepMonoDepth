@@ -16,7 +16,7 @@ class Trainer():
                    See util/schema/cfg.schema.json for schema file
     """
     def __init__(self, config: dict[str, any]):
-        # training params 
+        # training params
         self.name = config['name']
         self.method = config['method']
         self.epochs = config['epochs']
@@ -33,7 +33,8 @@ class Trainer():
         if self.method != 'supervised':
             print("\tPose Model: " + config['network']['pose_network'])
             if self.pose_net == None:
-                raise("Error: Cannot Train self-supervised without Pose Network, check configuration file")
+                raise RuntimeError("Trainer: Error, \
+                                   cannot Train self-supervised without Pose Network, check configuration file")
             else:
                 model_params += list(self.pose_net.parameters())
         elif self.pose_net != None:

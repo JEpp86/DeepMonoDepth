@@ -122,20 +122,3 @@ class ResNetUNet(nn.Module):
     
     return out0, out1, out2, out3
 
-if __name__ == '__main__':
-  """
-  print("Graph Visualization")
-  from torchviz import make_dot
-  import cv2
-  import numpy as np
-  img = cv2.imread('/home/jepp/Data/KITTI/2011_09_26/2011_09_26_drive_0001_sync/image_02/data/0000000001.png', cv2.IMREAD_UNCHANGED)
-  img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-  img = torch.tensor(np.array(img).astype(np.float32))
-  img = img.permute(2, 0, 1).unsqueeze(0)
-  img = img/255.0
-  resize = torchvision.transforms.Resize([320, 1024])
-  x = resize(img)
-  model = ResNetUNet()
-  y = model(x)
-  make_dot(y[0].mean(), params=dict(model.named_parameters()))
-  """
