@@ -13,20 +13,16 @@ from Trainer import Trainer
 
 
 class TestTrainer(unittest.TestCase):
-
-    def test_init(self):
+    def test_init_trainer(self):
         cfg_path = os.path.join(test_dir, "test_cfg", "test_cfg.json")
         cfg = json_cfg.load_cfg(cfg_path)
         schema = json_cfg.load_cfg(schema_path)
-        print("Loading Schema from: " + schema_path)
-        print("Loading test config from: " + cfg_path)
         self.assertTrue(json_cfg.validate_cfg(cfg=cfg, schema=schema))
-        trainer = Trainer(cfg)
-        self.assertEqual(trainer.name, cfg['name'])
-        self.assertEqual(trainer.method, cfg['method'])
-        self.assertEqual(trainer.epochs, cfg['epochs'])
+        trainer = Trainer(cfg, verbose=False)
+        self.assertEqual(trainer.name, cfg["name"])
+        self.assertEqual(trainer.method, cfg["method"])
+        self.assertEqual(trainer.epochs, cfg["epochs"])
 
 
-if __name__ == '__main':
+if __name__ == "__main":
     unittest.main()
-
