@@ -50,12 +50,10 @@ K = np.array(
 
 class TestKITTIRaw(unittest.TestCase):
     def test_init_KITTIraw(self):
-        data = KITTIRaw(
-            root_dir=os.path.join(test_dir, "test_data"),
-            K=K,
-            Tcam2pose=T_ic,
-            size=(320, 1024),
-        )
+        data = KITTIRaw(root_dir=os.path.join(test_dir, "test_data"), K=K, Tcam2pose=T_ic, size=(320, 1024))
+        self.assertIsInstance(data, KITTIRaw)
+
+    def test_get_seq(self):
         self.assertTrue(False)
 
 
