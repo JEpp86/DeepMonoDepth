@@ -2,9 +2,13 @@ import unittest
 import os, sys
 import numpy as np
 
+import torch
+
 test_dir = os.path.dirname(__file__)
 parent_dir = os.path.dirname(test_dir)
+root_dir = os.path.dirname(parent_dir)
 sys.path.insert(0, parent_dir)
+sys.path.insert(0, root_dir)
 
 from KITTIRaw import KITTIRaw
 
@@ -49,12 +53,16 @@ K = np.array(
 
 
 class TestKITTIRaw(unittest.TestCase):
-    def test_init_KITTIraw(self):
-        data = KITTIRaw(root_dir=os.path.join(test_dir, "test_data"), K=K, Tcam2pose=T_ic, size=(320, 1024))
-        self.assertIsInstance(data, KITTIRaw)
+    data = KITTIRaw(root_dir=os.path.join(test_dir, "test_data", "KITTI_test"), K=K, Tcam2pose=T_ic, size=(320, 1024))
 
-    def test_get_seq(self):
-        self.assertTrue(False)
+    def testInitKITTIraw(self):
+        self.assertIsInstance(self.data, KITTIRaw)
+
+    def testSequenceData(self):
+        self.assertTrue(len(self.data) != 0)
+        self.assertTrue(self.data[0]["image"].shape == torch.Size([3, 320, 1024]))
+        self.assertTrue(self.data[0]["sequence"][0].shape == torch.Size([3, 320, 1024]))
+        self.assertTrue(self.data[0]["sequence"][1].shape == torch.Size([3, 320, 1024]))
 
 
 if __name__ == "__main__":

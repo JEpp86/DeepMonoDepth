@@ -8,8 +8,10 @@ from ResnetPose import ResNetPoseNet
 
 
 class TestResPose(unittest.TestCase):
+    model = ResNetPoseNet()
+
     def test_init_posenet(self):
-        self.assertTrue(False)
+        self.assertIsInstance(self.model, ResNetPoseNet)
 
 
 if __name__ == "__main":

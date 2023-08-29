@@ -7,10 +7,20 @@
 import os, re, time
 import logging
 import numpy as np
+import cv2
 
-from typing import Optional, Union
+from typing import Any
 
+import torch
 from torch.utils.data import Dataset
+from torchvision import transforms
+
+if __name__ == "__main__":
+    import sys
+
+    sys.path.insert(0, os.path.abspath(".."))
+
+import util.geometry as geo
 
 # Directory structure of drive in KITTI Raw dataset
 oxts_dir = "oxts"
@@ -43,7 +53,9 @@ class KITTIRaw(Dataset):
         self.width = size[1]
         if (self.height % 32 != 0) or (self.width % 32 != 0):
             raise ValueError("KITTIRaw: Error, Image dimensions not divisible by 32")
+        self.resize = transforms.Resize([int(self.height), int(self.width)], antialias=True)
         self.load_training_data(root_dir)
+        logging.debug(f"Number of training sequences: {len(self.train_list)}")
 
     """!
     @brief Sets the training list based on the root directoy of KITTI Raw Dataset
@@ -61,8 +73,8 @@ class KITTIRaw(Dataset):
                     # sort list in numerical order of sequence
                     # seq_list.sort(key=lambda f: int(re.sub("\D", "", f)))
         logging.debug(f"Found {len(seq_list)} sequences")
-        for data_dir in seq_list:
-            self.get_training_list(data_dir)
+        for data in seq_list:
+            self.get_training_list(data)
 
     """!
     @brief extracts dictionary of training references and adds them to a listn
@@ -73,6 +85,7 @@ class KITTIRaw(Dataset):
     def get_training_list(self, seq_dir):
         img_timestamp = self.parse_timestamps(os.path.join(seq_dir, img_time))
         img_path = os.path.join(seq_dir, img_dir)
+        logging.debug(f"Image path: {img_path}")
         img_list = next(os.walk(img_path), (None, None, []))[2]
         img_list.sort(key=lambda f: int(re.sub("\D", "", f)))
         pos_timestamp = self.parse_timestamps(os.path.join(seq_dir, pos_time))
@@ -111,6 +124,7 @@ class KITTIRaw(Dataset):
         times = open(timestamp_file)
         for line in times:
             timestamps.append(self.date_to_epoch(line))
+        times.close()
         return timestamps
 
     """!
@@ -123,8 +137,61 @@ class KITTIRaw(Dataset):
         timestamp = time.strptime(date[:-4], "%Y-%m-%d %H:%M:%S.%f")
         return time.mktime(timestamp) + ns * 1e-9
 
+    # Position in world fra
+    def parse_position(self, index, sequence=None):
+        if sequence == None:
+            f_pos = open(self.train_list[index]["img_pos"])
+        else:
+            f_pos = open(self.train_list[index]["pos_seq"][sequence])
+        pos_str = f_pos.readline()
+        f_pos.close()
+        pos_lst = pos_str.split(" ")
+        x, y = geo.lat_lon2xy(pos_lst[0:2])
+        pos = np.array([x, y, pos_lst[2], pos_lst[3], pos_lst[4], pos_lst[5]], dtype=np.float32)
+        R1 = geo.generate_rotation_matrix(pos[3:])
+        t1 = pos[:3].reshape((3, 1))
+        Pg1 = geo.create_transformation_matrix(R1, t1)
+        return np.matmul(Pg1, geo.inverse_transform(self.Tcam))
+
+    def get_image(self, index, sequence=None):
+        if sequence == None:
+            image_path = self.train_list[index]["image"]
+        else:
+            image_path = self.train_list[index]["sequence"][sequence]
+        # TODO replace with PIL, this was handy when working with 16bit depth maps
+        img = cv2.imread(image_path, cv2.IMREAD_UNCHANGED)
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        img = torch.tensor(np.array(img).astype(np.float32))
+        # if image happens to be monochrome (used previously when converting depth maps to tensors)
+        if len(img.shape) == 2:
+            img = img.unsqueeze(0)
+        else:
+            img = img.permute(2, 0, 1)
+        # creates floating point image of range [0., 1.]
+        img = img / 255.0
+        img = self.resize(img)
+        return img
+
     def __len__(self):
         return len(self.train_list)
+
+    def __getitem__(self, index) -> Any:
+        cam_pose = self.parse_position(index=index, sequence=None)
+        cam_pose_p = self.parse_position(index=index, sequence=0)
+        cam_pose_n = self.parse_position(index=index, sequence=1)
+        p_xfrm = geo.get_relative_pose(cam_pose_p, cam_pose)
+        n_xfrm = geo.get_relative_pose(cam_pose_n, cam_pose)
+        img = self.get_image(index=index)
+        p_img = self.get_image(index=index, sequence=0)
+        n_img = self.get_image(index=index, sequence=1)
+        sample = {
+            "image": img,
+            "image_time": self.train_list[index]["img_time"],
+            "sequence": (p_img, n_img),
+            "sequence_time": (self.train_list[index]["seq_time"][0], self.train_list[index]["seq_time"][1]),
+            "transform": (p_xfrm, n_xfrm),
+        }
+        return sample
 
 
 if __name__ == "__main__":
@@ -171,4 +238,5 @@ if __name__ == "__main__":
     )
     test_dir = os.path.join(os.path.abspath("./test"), "test_data", "KITTI_test")
     data = KITTIRaw(root_dir=test_dir, K=K, Tcam2pose=T_ic, size=(320, 1024))
+    print(len(data))
     pass
