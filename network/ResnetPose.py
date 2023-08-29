@@ -12,7 +12,7 @@ class ResNetPoseNet(nn.Module):
     super().__init__()
 
     # Dowload base model
-    self.base_model = torchvision.models.resnet18(weights=torchvision.models.ResNet18_Weights.DEFAULT) #pretrained=True) 
+    self.base_model = torchvision.models.resnet18(weights=torchvision.models.ResNet18_Weights.DEFAULT)
     self.base_layers = list(self.base_model.children())
 
     # concatenate input weihgts to make 6 channel input (two concatenated images)
@@ -51,9 +51,3 @@ class ResNetPoseNet(nn.Module):
     translation = pose[...,3:]
     return axis, translation
 
-if __name__ == '__main__':
-    net = ResNetPoseNet()
-    in_data = torch.rand([4,6,380,1024])
-    print(in_data.shape)
-    out = net(in_data)
-    print(out.shape)
