@@ -11,8 +11,12 @@ if __name__ == "__main__":
 
     sys.path.insert(0, os.path.abspath(".."))
 
+# networks
 from network.ResnetUnet import ResnetModel, ResNetUNet
 from network.ResnetPose import ResNetPoseNet
+
+# datasets
+from data.KITTIRaw import KITTIRaw
 
 
 class Config:
@@ -35,6 +39,29 @@ class Config:
         except:
             raise ("Error Config: Schema validation failed")
 
+    def get_model(self) -> dict[str, torch.nn.Module]:
+        network = {}
+        if "network" not in self.cfg.keys():
+            raise ("Error Config: Network configuration not provided in configuration")
+        # Depth network
+        if "depth_network" in self.cfg["network"].keys():
+            if self.cfg["network"]["depth_network"] == "unet_resnet18":
+                network["depth"] = ResNetUNet(ResnetModel.RESNET_18)
+            elif self.cfg["network"]["depth_network"] == "unet_resnet34":
+                network["depth"] = ResNetUNet(ResnetModel.RESNET_34)
+            else:
+                raise ("Error Config: Unknown network type, " + self.cfg["network"]["depth_network"])
+        else:
+            raise ("Error Config: Depth Network not provided in configuration")
+        # Pose network
+        if "pose_network" not in self.cfg["network"].keys() or self.cfg["network"]["pose_network"] == "none":
+            network["pose"] = None
+        elif self.cfg["network"]["pose_network"] == "pose_resnet18":
+            network["pose"] = ResNetPoseNet()
+        else:
+            raise ("Error Config: Unknown network type, " + self.cfg["network"]["depth_network"])
+        return network
+
     def get_depth_model(self) -> torch.nn.Module:
         if "network" in self.cfg.keys() and "depth_network" in self.cfg["network"].keys():
             if self.cfg["network"]["depth_network"] == "unet_resnet18":
@@ -53,9 +80,9 @@ class Config:
             elif self.cfg["network"]["pose_network"] == "pose_resnet18":
                 return ResNetPoseNet()
             else:
-                raise ("Error: Unknown network type, " + self.cfg["network"]["depth_network"])
+                raise ("Error Config: Unknown network type, " + self.cfg["network"]["depth_network"])
         else:
-            raise ("Error: Network configuration not provided in file")
+            raise ("Error Config: Network configuration not provided in file")
 
     def get_optimizer(self, params: list, pose: bool = False) -> Union[torch.optim.SGD, torch.optim.Adam]:
         key = "pose_optimizer" if pose else "optimizer"
@@ -65,12 +92,33 @@ class Config:
             elif self.cfg[key]["algorithm"] == "adam":
                 return torch.optim.Adam(params=params, lr=self.cfg[key]["learning_rate"])
             else:
-                raise ("Error: Unknown optimization algoritm in configuration file")
+                raise ("Error Config: Unknown optimization algoritm in configuration file")
         else:
-            raise ("Error: Optimizer configuration not provided in file")
+            raise ("Error Config: Optimizer configuration not provided in file")
 
     def get_dataloader(self) -> DataLoader:
-        pass
+        if "dataset" in self.cfg.keys():
+            if self.cfg["dataset"]["data"] == "generic":
+                raise ("Error Config: Generic dataset current unsupported")
+            elif self.cfg["dataset"]["data"] == "kitti":
+                data = KITTIRaw(
+                    root_dir=self.cfg["dataset"]["path"],
+                    Tcam2pose=None
+                    if "transform" not in self.cfg["dataset"].keys()
+                    else self.cfg["dataset"]["transform"],
+                    size=(self.cfg["dataset"]["img_height"], self.cfg["dataset"]["img_width"]),
+                )
+                return DataLoader(
+                    dataset=data,
+                    batch_size=self.cfg["dataset"]["batch_size"],
+                    shuffle=True,
+                    num_workers=2,  # (os.cpu_count() - 1),
+                    pin_memory=True,
+                )
+            elif self.cfg["dataset"]["data"] == "kinect":
+                raise ("Error Config: Kinect dataset current unsupported")
+        else:
+            raise ("Error Config: Dataset configuration not provided in config")
 
 
 if __name__ == "__main__":

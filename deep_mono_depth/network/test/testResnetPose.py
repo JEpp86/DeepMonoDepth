@@ -13,6 +13,8 @@ class TestResPose(unittest.TestCase):
     def test_init_posenet(self):
         self.assertIsInstance(self.model, ResNetPoseNet)
 
+    # TODO run a tensor test an then backwards()
 
-if __name__ == "__main":
+
+if __name__ == "__main__":
     unittest.main()

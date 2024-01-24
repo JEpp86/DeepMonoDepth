@@ -9,7 +9,7 @@ import logging
 import numpy as np
 import cv2
 
-from typing import Any
+from typing import Optional
 
 import torch
 from torch.utils.data import Dataset
@@ -17,52 +17,53 @@ from torchvision import transforms
 
 if __name__ == "__main__":
     import sys
-
     sys.path.insert(0, os.path.abspath(".."))
 
 import util.geometry as geo
 
-# Directory structure of drive in KITTI Raw dataset
-oxts_dir = "oxts"
-pos_dir = os.path.join(oxts_dir, "data")
-pos_time = os.path.join(oxts_dir, "timestamps.txt")
-data_dir = "image_02"
-img_dir = os.path.join(data_dir, "data")
-img_time = os.path.join(data_dir, "timestamps.txt")
-
 
 class KITTIRaw(Dataset):
-    """!
-    @brief Pytorch Dataset for the KITTI raw dataset format as downloaded from
-           https://www.cvlibs.net/datasets/kitti/raw_data.php
-    @param root_dir: directory or list of directories in the folder format as downloaded from above link
-    @param K: intrinsic matrix, 4x4 dimensions
-    @param Tcam2pos: Transformation from camera to GPS
-    @param stride: the number of images between sequence
-    @param size: tuple of form (height, width) or None for original size
-                 (note image dimension must be divisible by 32)
+    """Pytorch Dataset for the KITTI raw dataset format as downloaded from
+    https://www.cvlibs.net/datasets/kitti/raw_data.php
     """
 
-    def __init__(self, root_dir: str, K: np.array, Tcam2pose: np.array, size: tuple, stride: int = 1):
+    # Directory structure of drive in KITTI Raw dataset
+    oxts_dir = "oxts"
+    pos_dir = os.path.join(oxts_dir, "data")
+    pos_time = os.path.join(oxts_dir, "timestamps.txt")
+    data_dir = "image_02"
+    img_dir = os.path.join(data_dir, "data")
+    img_time = os.path.join(data_dir, "timestamps.txt")
+
+    def __init__(self, root_dir: str, size: tuple[int, int], Tcam2pose: Optional[np.array] = None, stride: int = 1):
+        """
+        Parameters:
+            root_dir: directory or list of directories in the folder format as downloaded from above link
+            size: tuple of form (height, width) or None for original size (note image dimension must be divisible by 32)
+            Tcam2pos: Transformation from camera to GPS [Optional]
+            stride: the number of images between sequence [default = 1]
+        """
         super().__init__()
         self.train_list = []
-        self.K = K
-        self.Tcam = Tcam2pose
-        self.stride = stride
-        self.height = size[0]
-        self.width = size[1]
+        # self.K = np.array(K, dtype=np.float32).reshape(4, 3)
+        self.Tcam = Tcam2pose if (Tcam2pose is None) else np.array(Tcam2pose, dtype=np.float32).reshape(4, 4)
+        self.stride = int(stride)
+        self.height = int(size[0])
+        self.width = int(size[1])
         if (self.height % 32 != 0) or (self.width % 32 != 0):
             raise ValueError("KITTIRaw: Error, Image dimensions not divisible by 32")
-        self.resize = transforms.Resize([int(self.height), int(self.width)], antialias=True)
-        self.load_training_data(root_dir)
+        self.resize = transforms.Resize([self.height, self.width], antialias=True)
+        try:
+            self.load_training_data(root_dir)
+        except:
+            raise RuntimeError("Invalid KITTI Raw root directory")
         logging.debug(f"Number of training sequences: {len(self.train_list)}")
 
-    """!
-    @brief Sets the training list based on the root directoy of KITTI Raw Dataset
-    @param dir: root directory where drives are
-    """
-
     def load_training_data(self, dir: str):
+        """Sets the training list based on the root directoy of KITTI Raw Dataset
+        Paramaters:
+            dir: root directory where drives are
+        """
         seq_list = []
         for drive_date in os.scandir(os.path.abspath(dir)):
             logging.debug(f"Date Directory: {drive_date.path}")
@@ -76,20 +77,18 @@ class KITTIRaw(Dataset):
         for data in seq_list:
             self.get_training_list(data)
 
-    """!
-    @brief extracts dictionary of training references and adds them to a listn
-           this includes images sequences and timestams as well as gps position data
-    @param seq_dir: the directory if the sequence in the KITTI Raw dataset
-    """
-
     def get_training_list(self, seq_dir):
-        img_timestamp = self.parse_timestamps(os.path.join(seq_dir, img_time))
-        img_path = os.path.join(seq_dir, img_dir)
+        """extracts dictionary of training references and adds them to a list, this includes images sequences and timestamps as well as gps position data
+        Parameters:
+            seq_dir: the directory if the sequence in the KITTI Raw dataset
+        """
+        img_timestamp = self.parse_timestamps(os.path.join(seq_dir, self.img_time))
+        img_path = os.path.join(seq_dir, self.img_dir)
         logging.debug(f"Image path: {img_path}")
         img_list = next(os.walk(img_path), (None, None, []))[2]
         img_list.sort(key=lambda f: int(re.sub("\D", "", f)))
-        pos_timestamp = self.parse_timestamps(os.path.join(seq_dir, pos_time))
-        pos_path = os.path.join(seq_dir, pos_dir)
+        pos_timestamp = self.parse_timestamps(os.path.join(seq_dir, self.pos_time))
+        pos_path = os.path.join(seq_dir, self.pos_dir)
         pos_list = next(os.walk(pos_path), (None, None, []))[2]
         pos_list.sort(key=lambda f: int(re.sub("\D", "", f)))
         if len(img_list) - (2 * self.stride) <= 0:
@@ -175,12 +174,16 @@ class KITTIRaw(Dataset):
     def __len__(self):
         return len(self.train_list)
 
-    def __getitem__(self, index) -> Any:
-        cam_pose = self.parse_position(index=index, sequence=None)
-        cam_pose_p = self.parse_position(index=index, sequence=0)
-        cam_pose_n = self.parse_position(index=index, sequence=1)
-        p_xfrm = geo.get_relative_pose(cam_pose_p, cam_pose)
-        n_xfrm = geo.get_relative_pose(cam_pose_n, cam_pose)
+    def __getitem__(self, index) -> dict[str, any]:
+        if self.Tcam is None:
+            p_xfrm = None
+            n_xfrm = None
+        else:
+            cam_pose = self.parse_position(index=index, sequence=None)
+            cam_pose_p = self.parse_position(index=index, sequence=0)
+            cam_pose_n = self.parse_position(index=index, sequence=1)
+            p_xfrm = geo.get_relative_pose(cam_pose_p, cam_pose)
+            n_xfrm = geo.get_relative_pose(cam_pose_n, cam_pose)
         img = self.get_image(index=index)
         p_img = self.get_image(index=index, sequence=0)
         n_img = self.get_image(index=index, sequence=1)
@@ -227,6 +230,7 @@ if __name__ == "__main__":
     )
     # GPS to Camera 2
     T_ic = np.matmul(np.matmul(T_iv, T_vo), T_oc)
+    # print(T_ic)
     # Intrinsic Matrix
     K = np.array(
         [
@@ -237,6 +241,6 @@ if __name__ == "__main__":
         ]
     )
     test_dir = os.path.join(os.path.abspath("./test"), "test_data", "KITTI_test")
-    data = KITTIRaw(root_dir=test_dir, K=K, Tcam2pose=T_ic, size=(320, 1024))
-    print(len(data))
+    data = KITTIRaw(root_dir=test_dir, size=(320, 1024), Tcam2pose=T_ic)
+    # print(len(data))
     pass

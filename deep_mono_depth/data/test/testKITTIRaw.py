@@ -53,7 +53,7 @@ K = np.array(
 
 
 class TestKITTIRaw(unittest.TestCase):
-    data = KITTIRaw(root_dir=os.path.join(test_dir, "test_data", "KITTI_test"), K=K, Tcam2pose=T_ic, size=(320, 1024))
+    data = KITTIRaw(root_dir=os.path.join(test_dir, "test_data", "KITTI_test"), size=(320, 1024), Tcam2pose=T_ic)
 
     def testInitKITTIraw(self):
         self.assertIsInstance(self.data, KITTIRaw)
