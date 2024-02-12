@@ -8,9 +8,19 @@ import pyproj
 import numpy as np
 from scipy.spatial.transform import Rotation
 
+
+
+"""! @brief depth scaling
+"""
+def scale_depth(depth_map, min_distance, max_distance):
+    return ((depth_map * (max_distance - min_distance)) + min_distance)
+
+def scale_depth_from_disparity(disparity_map, min_distance, max_distance):
+    pass
+
+
 """!@ brief poses and transformations
 """
-
 
 def generate_rotation_matrix(axis):
     R = Rotation.from_euler("xyz", axis)

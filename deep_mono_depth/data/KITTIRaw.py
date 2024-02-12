@@ -19,7 +19,7 @@ if __name__ == "__main__":
     import sys
     sys.path.insert(0, os.path.abspath(".."))
 
-import util.geometry as geo
+import deep_mono_depth.util.geometry as geo
 
 
 class KITTIRaw(Dataset):

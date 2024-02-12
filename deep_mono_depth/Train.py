@@ -1,10 +1,10 @@
 import os
 import argparse
 import logging
-from core.Trainer import Trainer
-from util.json_cfg import Config
+from deep_mono_depth.core.Trainer import Trainer
+from deep_mono_depth.util.json_cfg import Config
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser(description="Train Deep Mono Depth Model")
     parser.add_argument("--config", "-c", type=str, help="training configuration", required=True)
     parser.add_argument("--logfile", "-l", type=str, help="output log file")
@@ -25,3 +25,6 @@ if __name__ == "__main__":
 
     trainer = Trainer(cfg)
     trainer.train()
+
+if __name__ == "__main__":
+    main()

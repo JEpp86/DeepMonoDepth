@@ -34,7 +34,7 @@ class ResnetModel(Enum):
 
 
 class ResNetUNet(nn.Module):
-  
+
 
   def __init__(self, model_type: ResnetModel):
     super().__init__()
@@ -48,7 +48,7 @@ class ResNetUNet(nn.Module):
         raise("Unsupported Model Type")
     self.base_layers = list(self.base_model.children())
 
-    # split model into a series of layers 
+    # split model into a series of layers
     self.layer0 = nn.Sequential(*self.base_layers[:3]) # size=(N, 64, x.H/2, x.W/2)
     self.layer0_1x1 = convelu(64, 64, 1, 0)
     self.layer1 = nn.Sequential(*self.base_layers[3:5]) # size=(N, 64, x.H/4, x.W/4)
@@ -115,10 +115,11 @@ class ResNetUNet(nn.Module):
     x = torch.cat([x, x_original], dim=1)
     x = self.conv_original_size2(x)
 
+    # Multiscale output
     out3 = self.conv_s3(x3)
     out2 = self.conv_s2(x2)
-    out1 = self.conv_s1(x1) 
+    out1 = self.conv_s1(x1)
     out0 = self.conv_last(x)
-    
+
     return out0, out1, out2, out3
 

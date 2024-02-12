@@ -4,7 +4,8 @@ import os, sys
 test_dir = os.path.dirname(__file__)
 module_dir = os.path.dirname(test_dir)
 root_dir = os.path.dirname(module_dir)
-sys.path.insert(0, root_dir)
+proj_dir = os.path.dirname(root_dir)
+sys.path.insert(0, proj_dir)
 from json_cfg import Config
 
 
@@ -34,7 +35,7 @@ class TestCfg(unittest.TestCase):
         self.assertTrue(len(cfg.cfg["some_array"]) == 4)
 
     def test_default_init(self):
-        cfg = Config(os.path.join(root_dir, "config", "default_cfg.json"))
+        cfg = Config(os.path.join(proj_dir, "config", "default_cfg.json"))
         self.assertIsInstance(cfg, Config)
         self.assertTrue(cfg.cfg["name"] == "default")
 

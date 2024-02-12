@@ -1,19 +1,15 @@
 import os, re
 from typing import Union
-from BaseData import BaseData
+# from deep_mono_depth.data.BaseData import BaseData
 
 import torch
+from torch.utils.data import Dataset
 from torchvision import transforms
 
 import cv2
 import numpy as np
 
-if __name__ == "__main__":
-    import sys
-    sys.path.insert(0, os.path.abspath(".."))
-
-
-class GenericSupervised(BaseData):
+class GenericSupervised(Dataset): # (BaseData):
 
     def __init__(
         self,
@@ -24,8 +20,10 @@ class GenericSupervised(BaseData):
         depth_dirname: str ="depth",
     ) -> None:
         super().__init__()
-
+        self.training_list = []
         self.get_training_list(data_dirs, image_dirname, depth_dirname)
+        # print(self.training_list[-1])
+        # print("parsed " + str(len(self.training_list)) + " images.")
         self.height = size[0]
         self.width = size[1]
         self.scale_factor = scale_factor
@@ -54,6 +52,7 @@ class GenericSupervised(BaseData):
             depth_list = next(os.walk(depth_dir), (None, None, []))[2]
             depth_list.sort(key=lambda f: int(re.sub('\D', '', f)))
             # print(len(img_list))
+            # print(img_list[-1])
             # print(len(depth_list))
             if len(img_list) != len(depth_list):
                 raise IndexError("Dataset: Error, mismatched number of images and ground truth")
@@ -61,6 +60,7 @@ class GenericSupervised(BaseData):
                 train_dict = {'image': os.path.join(img_dir, img_list[i]),
                             'depth': os.path.join(depth_dir, depth_list[i])}
                 self.training_list.append(train_dict)
+                # print("Added image to list")
         if len(self.training_list) == 0:
                 raise ValueError("Dataset: No Image data provided")
 
@@ -83,6 +83,9 @@ class GenericSupervised(BaseData):
         return len(self.training_list)
 
     def __getitem__(self, index) -> dict[str, any]:
+        #print("---")
+        #print(index)
+        #print(self.training_list)
         depth = self.image_to_tensor(self.training_list[index]['depth'])
         depth = depth / self.scale_factor
         img = self.image_to_tensor(self.training_list[index]['image'])
@@ -92,18 +95,35 @@ class GenericSupervised(BaseData):
         return sample
 
 
-class GenericSelfSupervised(BaseData):
+class GenericSelfSupervised(Dataset): # (BaseData):
     def __init__(self) -> None:
         super().__init__()
         pass
 
 
 if __name__ == "__main__":
+    from torch.utils.data import DataLoader
     from matplotlib import pyplot as plt
     test_dir1 = os.path.abspath("E:\\Kinect\\20221025_Kinect") #os.path.join(os.path.abspath("./data/test"), "test_data", "Kinect_test") # , "td1")
     #test_dir2 = os.path.join(os.path.abspath("./test"), "test_data", "Kinect_test", "td2")
     data = GenericSupervised(test_dir1, size=(768, 1024), scale_factor=1000)
-    plt.imshow(data[0]['image'].permute(1,2,0))
-    plt.show()
-    plt.imshow(data[0]['gt'].squeeze(0))
-    plt.show()
+    #plt.imshow(data[0]['image'].permute(1,2,0))
+    #plt.show()
+    #plt.imshow(data[0]['gt'].squeeze(0))
+    #plt.show()
+
+    print(len(data))
+    data_loader = DataLoader(data, 8, shuffle=True, pin_memory=True)
+
+    for batch_idx, sample in enumerate(data_loader):
+        print(batch_idx)
+        print(sample['image'].size())
+        #print(sample['image'])
+        print(sample['gt'].size())
+        #print(sample['gt'])
+        plt.imshow(sample['image'][0,...].squeeze(0).permute(1,2,0))
+        plt.show()
+        plt.imshow(sample['gt'][0,...].squeeze(0).squeeze(0))
+        plt.show()
+        if batch_idx > 3:
+            break
