@@ -187,7 +187,6 @@ class ReprojectionLoss(torch.nn.Module):
                   [Zc]]      [Zc],
                              [1.]]
         """
-        # TODO should depth be muliplied before Grid muliply?
         cam_points = torch.linalg.sove(self.K[:, :3, :3], self.sensor_grid)
         cam_points = depth.view(self.batch_size, 1, -1) * cam_points
         return torch.cat([cam_points, self.ones], 1)

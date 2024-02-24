@@ -8,11 +8,12 @@
     },
     "dataset": {
         "data": "generic",
-        "path": "E:\\Kinect\\20221025_Kinect",
+        "path": "E:\\Kinect",
         "batch_size": 8,
         "img_height": 384,
         "img_width" : 512,
-        "scale_factor": 1000
+        "scale_factor": 1000,
+        "data_loaders": 8
     },
     "network": {
         "depth_network": "unet_resnet18"

@@ -22,8 +22,6 @@ class GenericSupervised(Dataset): # (BaseData):
         super().__init__()
         self.training_list = []
         self.get_training_list(data_dirs, image_dirname, depth_dirname)
-        # print(self.training_list[-1])
-        # print("parsed " + str(len(self.training_list)) + " images.")
         self.height = size[0]
         self.width = size[1]
         self.scale_factor = scale_factor
@@ -39,11 +37,13 @@ class GenericSupervised(Dataset): # (BaseData):
                 for file in os.listdir(root_path):
                     if os.path.isdir(os.path.join(root_path,file)):
                         data_path += [os.path.join(root_path, file)]
-            while img_directory not in os.listdir(data_path[0]):
+            # python absurdities
+            while img_directory not in [d for d in os.listdir(data_path[0]) if os.path.isdir(os.path.join(data_path[0], d))]:
                 tmp_path = data_path
                 data_path = []
-                for folder in tmp_path:
-                    data_path += os.listdir(folder)
+                for d_dir in tmp_path:
+                    data_path += [os.path.join(d_dir,d) for d in os.listdir(d_dir) if os.path.isdir(os.path.join(d_dir, d))]
+
         for data_dir in data_path:
             img_dir = os.path.join(data_dir, img_directory)
             img_list = next(os.walk(img_dir), (None, None, []))[2]
@@ -51,11 +51,8 @@ class GenericSupervised(Dataset): # (BaseData):
             depth_dir = os.path.join(data_dir, depth_directory)
             depth_list = next(os.walk(depth_dir), (None, None, []))[2]
             depth_list.sort(key=lambda f: int(re.sub('\D', '', f)))
-            # print(len(img_list))
-            # print(img_list[-1])
-            # print(len(depth_list))
             if len(img_list) != len(depth_list):
-                raise IndexError("Dataset: Error, mismatched number of images and ground truth")
+                raise IndexError("Dataset: Error, mismatched number of images and ground truth at " + data_dir)
             for i in range(len(img_list)):
                 train_dict = {'image': os.path.join(img_dir, img_list[i]),
                             'depth': os.path.join(depth_dir, depth_list[i])}
@@ -104,7 +101,7 @@ class GenericSelfSupervised(Dataset): # (BaseData):
 if __name__ == "__main__":
     from torch.utils.data import DataLoader
     from matplotlib import pyplot as plt
-    test_dir1 = os.path.abspath("E:\\Kinect\\20221025_Kinect") #os.path.join(os.path.abspath("./data/test"), "test_data", "Kinect_test") # , "td1")
+    test_dir1 = os.path.abspath("E:\\Kinect") #os.path.join(os.path.abspath("./data/test"), "test_data", "Kinect_test") # , "td1")
     #test_dir2 = os.path.join(os.path.abspath("./test"), "test_data", "Kinect_test", "td2")
     data = GenericSupervised(test_dir1, size=(768, 1024), scale_factor=1000)
     #plt.imshow(data[0]['image'].permute(1,2,0))

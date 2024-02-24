@@ -105,6 +105,7 @@ class Config:
 
     def get_dataloader(self) -> DataLoader:
         if "dataset" in self.cfg.keys():
+            num_loaders = self.cfg["dataset"]["data_loaders"] if "data_loaders" in self.cfg["dataset"].keys() else 2
             if self.cfg["dataset"]["data"] == "generic":
                 data = GenericSupervised(
                     data_dirs=self.cfg["dataset"]["path"],
@@ -114,7 +115,7 @@ class Config:
                     dataset=data,
                     batch_size=self.cfg["dataset"]["batch_size"],
                     shuffle=True,
-                    num_workers=8,
+                    num_workers=num_loaders,
                     pin_memory=True,
                 )
             elif self.cfg["dataset"]["data"] == "kitti":
@@ -129,7 +130,7 @@ class Config:
                     dataset=data,
                     batch_size=self.cfg["dataset"]["batch_size"],
                     shuffle=True,
-                    num_workers=16,  # (os.cpu_count() - 1),
+                    num_workers=num_loaders,
                     pin_memory=True,
                 )
             elif self.cfg["dataset"]["data"] == "kinect":
