@@ -8,12 +8,17 @@
     },
     "dataset": {
         "data": "generic",
-        "path": ".",
-        "batch_size": 8
+        "path": "E:\\Kinect\\20221025_Kinect",
+        "batch_size": 2,
+        "img_height": 768,
+        "img_width" : 1024,
+        "scale_factor": 1000
     },
     "network": {
         "depth_network": "unet_resnet18",
         "pose_network": "pose_resnet18",
         "shared_encoder": false
-    }
+    },
+    "min_distance": 0.1,
+    "max_distance": 10.0
 }

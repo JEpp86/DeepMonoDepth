@@ -1,5 +1,5 @@
 {
-    "name": "kinect",
+    "name": "kinect_supervised_r18",
     "method": "supervised",
     "epochs": 20,
     "optimizer": {
@@ -7,11 +7,17 @@
         "learning_rate": 1e-4
     },
     "dataset": {
-        "data": "kinect",
-        "path": ".",
-        "batch_size": 8
+        "data": "generic",
+        "path": "E:\\Kinect",
+        "batch_size": 8,
+        "img_height": 384,
+        "img_width" : 512,
+        "scale_factor": 1000,
+        "data_loaders": 12
     },
     "network": {
         "depth_network": "unet_resnet18"
-    }
+    },
+    "min_distance": 0.1,
+    "max_distance": 10.0
 }
