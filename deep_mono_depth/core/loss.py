@@ -8,13 +8,14 @@ import torch
 import numpy as np
 from deep_mono_depth.util.geometry import scale_depth, scale_depth_from_disparity
 
+
 class Scaler(torch.nn.Module):
     def __init__(self, min_distance, max_distance) -> None:
         super().__init__()
         self.min_distance = min_distance
         self.max_distance = max_distance
 
-    def forward(self,input):
+    def forward(self, input):
         return scale_depth(input, self.min_distance, self.max_distance)
 
 
@@ -129,6 +130,7 @@ class DepthLoss(torch.nn.Module):
         ssim_kernel: int = 3,
         ssim_c1: float = 1e-2**2,
         ssim_c2: float = 3e-2**2,
+        mask: bool = True,
     ):
         super(DepthLoss, self).__init__()
         self.alpha = alpha
@@ -136,12 +138,18 @@ class DepthLoss(torch.nn.Module):
         self.l1_loss = L1Loss()
         self.ssim_loss = SSIMLoss(kernel_size=ssim_kernel, C1=ssim_c1, C2=ssim_c2)
         self.edge_loss = EdgeLoss()
+        self.mask = mask
 
+    # TODO genericize, Inputs and Outputs
+    # add dictionary outputs for each error manifold and one for total loss
     def forward(self, pred, target) -> float:
+        if self.mask:
+            target_mask = (target > 0) * 1.0
+            pred = torch.mul(pred, target_mask)
         return (
             (self.alpha * self.ssim_loss(pred, target).mean())
-            + ((1 - self.alpha) * self.l1_loss(pred, target).mean()) # .mean(1, True))
-            + (self.edge_weight * self.edge_loss(pred, target)) # .mean(1, True))
+            + ((1 - self.alpha) * self.l1_loss(pred, target).mean())
+            + (self.edge_weight * self.edge_loss(pred, target))
         )
 
 

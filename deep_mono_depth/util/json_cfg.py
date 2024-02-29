@@ -14,11 +14,14 @@ if __name__ == "__main__":
 # networks
 from deep_mono_depth.network.ResnetUnet import ResnetModel, ResNetUNet
 from deep_mono_depth.network.ResnetPose import ResNetPoseNet
+
 # datasets
 from deep_mono_depth.data.KITTIRaw import KITTIRaw
 from deep_mono_depth.data.GenericData import GenericSupervised
+
 # loss
 from deep_mono_depth.core.loss import DepthLoss, ReprojectionLoss, Scaler
+
 
 class Config:
     schema_path = os.path.join(os.path.dirname(__file__), "schema", "cfg.schema.json")
@@ -54,19 +57,15 @@ class Config:
                 raise ("Error Config: Unknown network type, " + self.cfg["network"]["depth_network"])
         else:
             raise ("Error Config: Depth Network not provided in configuration")
-        # Pose network
-        #if "pose_network" not in self.cfg["network"].keys() or self.cfg["network"]["pose_network"] == "none":
-        #    network["pose"] = None
-        #el
+
         if "pose_network" in self.cfg["network"].keys():
             if self.cfg["network"]["pose_network"] == "pose_resnet18":
                 network["pose"] = ResNetPoseNet()
             else:
                 raise ("Error Config: Unknown network type, " + self.cfg["network"]["pose_network"])
         if torch.cuda.is_available():
-            print(network.keys())
             for key in network.keys():
-                network[key] = network[key].to('cuda:0')
+                network[key] = network[key].to("cuda:0")
         return network
 
     def get_depth_model(self) -> torch.nn.Module:
@@ -109,8 +108,9 @@ class Config:
             if self.cfg["dataset"]["data"] == "generic":
                 data = GenericSupervised(
                     data_dirs=self.cfg["dataset"]["path"],
-                    size=(self.cfg["dataset"]["img_height"],self.cfg["dataset"]["img_width"]),
-                    scale_factor=1000,)
+                    size=(self.cfg["dataset"]["img_height"], self.cfg["dataset"]["img_width"]),
+                    scale_factor=1000,
+                )
                 return DataLoader(
                     dataset=data,
                     batch_size=self.cfg["dataset"]["batch_size"],
@@ -142,14 +142,14 @@ class Config:
 
     def get_loss_criteria(self) -> dict[str, torch.nn.Module]:
         loss_functions = {}
-        if self.cfg['method'] == "supervised":
-            loss_functions['depth'] = DepthLoss().to('cuda:0') if torch.cuda.is_available() else DepthLoss()
+        if self.cfg["method"] == "supervised":
+            loss_functions["depth"] = DepthLoss().to("cuda:0") if torch.cuda.is_available() else DepthLoss()
         else:
-            loss_functions['reprojection'] = ReprojectionLoss()
+            loss_functions["reprojection"] = ReprojectionLoss()
         return loss_functions
 
     def get_output_scaler(self):
-        if ("min_distance"  in self.cfg.keys()) and ("max_distance" in self.cfg.keys()):
+        if ("min_distance" in self.cfg.keys()) and ("max_distance" in self.cfg.keys()):
             return Scaler(self.cfg["min_distance"], self.cfg["max_distance"])
         else:
             # no scaling
@@ -159,7 +159,7 @@ class Config:
 if __name__ == "__main__":
     print("JSON Config")
     print(Config.schema_path)
-    default_cfg = os.path.abspath(os.path.join( "config", "default_cfg.json"))
+    default_cfg = os.path.abspath(os.path.join("config", "default_cfg.json"))
     print(default_cfg)
     print("Load Config")
     cfg = Config(default_cfg)

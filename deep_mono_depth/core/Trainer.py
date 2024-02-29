@@ -8,9 +8,9 @@ import tqdm
 import logging
 import numpy as np
 import torch
+from datetime import datetime
 
 from deep_mono_depth.util.json_cfg import Config
-
 
 
 class Trainer:
@@ -69,24 +69,29 @@ class Trainer:
             print("\tNumber of Batches: " + str(len(self.dataset)))
         # loss criteria
         self.loss = config.get_loss_criteria()
-        self.avg_loss = 0.
+        self.avg_loss = 0.0
         if len(self.loss) == 0:
-            raise("no loss criteria to train ")
+            raise ("no loss criteria to train ")
         elif verbose:
             print("Loss:")
             for key in self.loss.keys():
                 print("\t" + key)
         self.scaler = config.get_output_scaler()
+        # progress bar
         self.tepoch = tqdm.tqdm(range(self.epochs), unit="epoch", position=0, leave=True)
         self.tbatch = tqdm.tqdm(self.dataset, unit="batch", position=1, leave=False)
+        # outputs
+        start_time = datetime.now().strftime("%Y%m%d-%H%M%S")
+        self.model_dir = os.path.join(os.getcwd(), "models", start_time + "_" + self.name + "_" + key)
+        self.log_dir = os.path.join(os.getcwd(), "log", start_time + "_" + self.name + "_" + key)
 
     def train(self):
         for self.epoch in range(self.epochs):
-
             self.run_batch()
             self.save_model()
             self.tepoch.set_postfix(avg_loss=self.avg_loss)
             self.tepoch.update()
+            self.avg_loss = 0.0
 
         logging.info("Training Complete")
 
@@ -100,10 +105,10 @@ class Trainer:
             self.tbatch.update()
         self.tbatch.refresh()
 
-    def calculate_loss(self, input : dict[str, torch.TensorType] , output : dict[str, torch.TensorType] ):
-        loss = 0.
+    def calculate_loss(self, input: dict[str, torch.TensorType], output: dict[str, torch.TensorType]):
+        loss = 0.0
         if "depth" in self.loss.keys():
-            loss += self.loss['depth'](output['depth'], input['gt'].to('cuda:0'))
+            loss += self.loss["depth"](output["depth"], input["gt"].to("cuda:0"))
         loss.backward()
         self.tbatch.set_postfix(loss=loss.item())
         # rolling average
@@ -114,21 +119,17 @@ class Trainer:
         self.optimizer.step()
         self.optimizer.zero_grad()
 
-
-    def get_outputs(self, input : dict[str, torch.TensorType]):
+    def get_outputs(self, input: dict[str, torch.TensorType]):
         output = {}
         if "depth" in self.network.keys():
             op = self.network["depth"](input["image"].to("cuda:0"))
             # TODO multiscale not handled
-            output['depth'] = self.scaler(op[0])
+            output["depth"] = self.scaler(op[0])
         return output
 
     def save_model(self):
-        model_dir = os.path.join(os.getcwd(), 'models')
-        if not os.path.exists(model_dir):
-            os.makedirs(model_dir)
+        if not os.path.exists(self.model_dir):
+            os.makedirs(self.model_dir)
         for key in self.network.keys():
-            file_name = self.name + "_" + key + "_epoch" + str(self.epoch + 1) + ".pth"
-            torch.save(self.network[key].state_dict(), os.path.join(model_dir, file_name))
-
-
+            file_name = "epoch-%d_loss-%3f.pth" % ((self.epoch + 1), self.avg_loss)
+            torch.save(self.network[key].state_dict(), os.path.join(self.model_dir, file_name))
