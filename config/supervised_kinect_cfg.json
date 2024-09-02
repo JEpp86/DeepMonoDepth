@@ -19,5 +19,10 @@
         "depth_network": "unet_resnet18"
     },
     "min_distance": 0.1,
-    "max_distance": 10.0
+    "max_distance": 10.0,
+    "logging": {
+        "level": "debug",
+        "frequency": "epoch"
+    }
+
 }

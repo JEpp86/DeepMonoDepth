@@ -1,15 +1,12 @@
 import json
 import jsonschema
 import os
+import logging
+from datetime import datetime
 from typing import Optional, Union
 
 import torch
 from torch.utils.data import DataLoader
-
-if __name__ == "__main__":
-    import sys
-
-    sys.path.insert(0, os.path.abspath(".."))
 
 # networks
 from deep_mono_depth.network.ResnetUnet import ResnetModel, ResNetUNet
@@ -154,6 +151,27 @@ class Config:
         else:
             # no scaling
             return Scaler(0, 1)
+
+    def setup_logging(self):
+        if "logging" in self.cfg.keys():
+            level = self.cfg["logging"]["level"] if "level" in self.cfg["logging"].keys() else "info"
+            if level == "info":
+                log_level = logging.INFO
+            elif level == "debug":
+                log_level = logging.DEBUG
+            else:
+                log_level = logging.CRITICAL
+            if "logfile" in self.cfg["logging"].keys():
+                logfile = self.cfg["logging"]["logfile"]
+            else:
+                start_time = datetime.now().strftime("%Y%m%d-%H%M%S")
+                logfile = start_time + "_" + self.cfg["name"] + "_" + level + ".log"
+            logging.basicConfig(
+                filename=logfile,
+                encoding="utf-8",
+                level=log_level,
+                format="[%(levelname)s](%(name)s) %(asctime)s - %(message)s",
+            )
 
 
 if __name__ == "__main__":
